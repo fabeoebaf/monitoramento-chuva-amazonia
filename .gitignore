@@ -1,0 +1,25 @@
+# ==========================================
+# IGNORAR DADOS E RESULTADOS (Arquivos Pesados)
+# ==========================================
+# Não queremos subir NetCDFs, GRIBs, Shapes e Imagens para o GitHub
+data/
+outputs/
+
+# ==========================================
+# PYTHON (Arquivos temporários e virtuais)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.ipynb_checkpoints/
+
+# ==========================================
+# SISTEMAS OPERACIONAIS
+# ==========================================
+.DS_Store
+Thumbs.db
