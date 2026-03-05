@@ -1,0 +1,18 @@
+# Processamento de Dados Numéricos e Tabulares
+numpy
+pandas
+
+# Processamento de Dados Multidimensionais (NetCDF)
+xarray
+netCDF4
+h5netcdf
+
+# Processamento Geoespacial (Shapefiles, TIFF, Ascii)
+geopandas
+rioxarray
+rasterio
+shapely
+
+# Visualização de Dados e Gráficos
+matplotlib
+adjustText
