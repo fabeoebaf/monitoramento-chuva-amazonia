@@ -74,9 +74,6 @@ def calcular_anomalia_diaria_base(ds_obs, ds_clim):
 
 def main():
     # --- ESCOLHA O MODO AQUI ---
-    # Opções: 
-    # "continuo": Olha apenas para os últimos dias do arquivo inteiro.
-    # "historico": Itera sobre todos os anos e meses do arquivo, gerando acumulados e mensais.
     MODO = "historico"  
     
     print(f"=== CÁLCULO DE ANOMALIA | MODO: {MODO.upper()} ===")
@@ -104,13 +101,12 @@ def main():
         ano_atual, mes_atual, dia_atual = ultima_data.year, ultima_data.month, ultima_data.day
         pasta_destino = criar_pasta(ano_atual, mes_atual)
         
-        # Últimos 15 dias globais do dataset
-        slice_15dias = da_anomalia_total.isel(time=slice(-15, None))
-        data_ini_15 = pd.to_datetime(slice_15dias.time.values[0])
-        data_fim_15 = pd.to_datetime(slice_15dias.time.values[-1])
+        # === CORREÇÃO: Puxa 15 dias corridos exatos cruzando meses ===
+        data_ini_15 = ultima_data - pd.Timedelta(days=14)
+        slice_15dias = da_anomalia_total.sel(time=slice(data_ini_15, ultima_data))
         
         anom_15d_rolling = slice_15dias.sum(dim='time')
-        nome_arq_15 = f"Anomalia_Ultimos15Dias_{ano_atual}{mes_atual:02d}_dia_{data_ini_15.day:02d}_a_{data_fim_15.day:02d}.nc"
+        nome_arq_15 = f"Anomalia_Ultimos15Dias_{ano_atual}{mes_atual:02d}_dia_{data_ini_15.day:02d}_a_{ultima_data.day:02d}.nc"
         anom_15d_rolling.to_netcdf(os.path.join(pasta_destino, nome_arq_15))
         print(f"   [SALVO] {nome_arq_15}")
 
@@ -147,11 +143,16 @@ def main():
                 anom_acumulada_mes.to_netcdf(os.path.join(pasta_saida, nome_acumulado))
                 print(f"      [SALVO] Acumulado Parcial: {nome_acumulado}")
 
-                # B. Últimos 15 Dias daquele mês específico
-                da_ultimos_15 = da_mes.isel(time=slice(-15, None))
+                # B. Últimos 15 Dias Corridos (Cruza os meses!)
+                # === CORREÇÃO AQUI ===
+                data_fim_historico = pd.to_datetime(f"{ano}-{mes:02d}-{ultimo_dia:02d}")
+                data_ini_historico = data_fim_historico - pd.Timedelta(days=14)
+                
+                # Lê do arquivo GLOBAL (da_anomalia_total) para voltar ao mês anterior se precisar
+                da_ultimos_15 = da_anomalia_total.sel(time=slice(data_ini_historico, data_fim_historico))
                 anom_15d = da_ultimos_15.sum(dim='time')
-                dias_janela = da_ultimos_15['time'].dt.day.values
-                nome_arq_15 = f"Anomalia_Ultimos15Dias_{ano}{mes:02d}_dia_{dias_janela[0]:02d}_a_{dias_janela[-1]:02d}.nc"
+                
+                nome_arq_15 = f"Anomalia_Ultimos15Dias_{ano}{mes:02d}_dia_{data_ini_historico.day:02d}_a_{data_fim_historico.day:02d}.nc"
                 anom_15d.to_netcdf(os.path.join(pasta_saida, nome_arq_15))
                 print(f"      [SALVO] 15 Dias: {nome_arq_15}")
 
@@ -159,7 +160,6 @@ def main():
                 _, ultimo_dia_calendario = monthrange(ano, mes)
                 if ultimo_dia == ultimo_dia_calendario:
                     nome_mensal = f"Anomalia_Mensal_{ano}{mes:02d}.nc"
-                    # Pode salvar a mesma variável da acumulada, já que o mês está completo
                     anom_acumulada_mes.to_netcdf(os.path.join(pasta_saida, nome_mensal))
                     print(f"      [SALVO MÊS FECHADO] {nome_mensal}")
 
